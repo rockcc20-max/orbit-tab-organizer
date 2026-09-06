@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Orbit - Tab Organizer",
   "description": "按网站汇总所有 Chrome 选项卡，并快速查找、切换和清理重复页面。",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "icons": {
     "128": "assets/orbit-icon.png"
   },

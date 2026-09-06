@@ -3,21 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#f7f8fa" />
     <title>Orbit · 选项卡总览</title>
     <link rel="icon" href="assets/orbit-icon.png" />
+    <script src="theme.js"></script>
     <link rel="stylesheet" href="tailwind.css" />
   </head>
   <body>
     <div class="app-shell mx-auto max-w-[1480px] px-5 sm:px-9 lg:px-12">
       <header class="app-header flex items-center justify-between gap-4">
         <a class="brand" href="manager.html" aria-label="Orbit 首页">
-          <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="8" stroke="currentColor" stroke-width="2.5"/><ellipse cx="16" cy="16" rx="15" ry="6" transform="rotate(-35 16 16)" stroke="currentColor" stroke-width="1.5"/><circle cx="27" cy="8" r="3" fill="#f7f8fa"/><circle cx="27" cy="8" r="2.2" fill="currentColor"/></svg>
+          <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="8" stroke="currentColor" stroke-width="2.5"/><ellipse cx="16" cy="16" rx="15" ry="6" transform="rotate(-35 16 16)" stroke="currentColor" stroke-width="1.5"/><circle cx="27" cy="8" r="3" fill="var(--page-bg)"/><circle cx="27" cy="8" r="2.2" fill="currentColor"/></svg>
           <span>orbit<span class="brand-period">.</span></span>
         </a>
         <div class="flex items-center gap-3">
           <span id="sync-status" class="sync-status" role="status"><span class="status-dot"></span><span id="sync-label">正在同步</span></span>
+          <div id="theme-control" class="theme-control">
+            <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换外观，当前：跟随浏览器" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu" title="外观：跟随浏览器">
+              <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+              <span id="theme-label" class="theme-label">跟随浏览器</span>
+            </button>
+            <div id="theme-menu" class="theme-menu" role="menu" aria-label="外观模式" hidden>
+              <button id="theme-system" class="theme-option" type="button" role="menuitemradio" aria-checked="true" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span>跟随浏览器</span><span class="theme-check" aria-hidden="true">✓</span></button>
+              <button id="theme-light" class="theme-option" type="button" role="menuitemradio" aria-checked="false" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><span>白天模式</span><span class="theme-check" aria-hidden="true">✓</span></button>
+              <button id="theme-dark" class="theme-option" type="button" role="menuitemradio" aria-checked="false" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"/></svg><span>黑夜模式</span><span class="theme-check" aria-hidden="true">✓</span></button>
+            </div>
+          </div>
           <button id="help-button" class="icon-button" data-action="help" aria-label="使用说明" title="使用说明">?</button>
         </div>
       </header>

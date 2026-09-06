@@ -1,6 +1,6 @@
 {
   "name": "orbit-browser-window-manager",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "build:css": "tailwindcss -i ./tailwind.input.css -o ./tailwind.css --minify",
     "watch:css": "tailwindcss -i ./tailwind.input.css -o ./tailwind.css --watch",
     "test": "node --test",
-    "check": "npm run build && node --check background.js && node --check manager.js && node --test"
+    "check": "npm run build && node --check background.js && node --check manager.js && node --check theme.js && node --test"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
