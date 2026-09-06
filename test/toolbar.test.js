@@ -11,7 +11,7 @@ test("toolbar presents filters and sorting before search in visual and keyboard 
   assert.ok(toolbar.indexOf('id="site-sort"') < toolbar.indexOf('id="global-search"'));
   assert.equal((toolbar.match(/id="global-search"/g) || []).length, 1);
   assert.match(html, /aria-label="筛选标签页"/);
-  assert.match(html, />重复标签页 </);
+  assert.match(html, /data-i18n="filters.duplicates">重复标签页<\/span>/);
   assert.match(html, />按标签页数量</);
 });
 

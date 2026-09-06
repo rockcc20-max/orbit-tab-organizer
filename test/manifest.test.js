@@ -10,7 +10,7 @@ test("manifest is valid and all declared entry files exist", async () => {
   const manifest = JSON.parse(await readFile(resolve(projectRoot, "manifest.json"), "utf8"));
   assert.equal(manifest.manifest_version, 3);
   assert.ok(manifest.permissions.includes("tabs"));
-  assert.ok(manifest.permissions.includes("storage"));
+  assert.deepEqual([...manifest.permissions].sort(), ["favicon", "tabs"], "request only permissions used by the current features");
   assert.ok(manifest.permissions.includes("favicon"), "local website logos need the Chrome favicon permission");
 
   const declaredFiles = [
@@ -26,4 +26,6 @@ test("manifest is valid and all declared entry files exist", async () => {
   assert.match(managerHtml, /<script src="manager\.bundle\.js" defer><\/script>/);
   assert.doesNotMatch(managerHtml, /<script[^>]+src="https?:/, "extension scripts must be packaged locally");
   await access(resolve(projectRoot, "manager.bundle.js"));
+  await access(resolve(projectRoot, "i18n.js"));
+  assert.ok(managerHtml.indexOf('src="i18n.js"') < managerHtml.indexOf('src="theme.js"'), "language must be ready before theme labels initialize");
 });

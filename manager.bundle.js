@@ -30,10 +30,51 @@ const SITE_NAMES = [
   ["gmail.com", "Gmail"],
   ["mail.google.com", "Gmail"],
   ["google.com", "Google"],
+  ["project.larksuite.com", "Meegle", { hostScoped: true }],
+  ["project.feishu.cn", "Feishu Project", { hostScoped: true }],
+  ["larksuite.com", "Lark", { hostScoped: true, tenantName: "Lark Docs" }],
+  ["feishu.cn", "Feishu", { hostScoped: true, tenantName: "Feishu Docs" }],
+  ["okx.com", "OKX"],
   ["linkedin.com", "LinkedIn"],
   ["reddit.com", "Reddit"],
   ["bilibili.com", "哔哩哔哩"]
 ];
+
+const SITE_LABELS = {
+  "zh-CN": {
+    unknown: "未命名网站", browser: "浏览器页面", local: "本地文件", newTab: "新标签页",
+    "Lark Docs": "Lark 云文档", "Feishu": "飞书", "Feishu Docs": "飞书云文档",
+    "Feishu Project": "飞书项目", "哔哩哔哩": "哔哩哔哩"
+  },
+  en: {
+    unknown: "Unnamed website", browser: "Browser page", local: "Local file", newTab: "New tab",
+    "Lark Docs": "Lark Docs", "Feishu": "Feishu", "Feishu Docs": "Feishu Docs",
+    "Feishu Project": "Feishu Project", "哔哩哔哩": "bilibili"
+  },
+  ko: {
+    unknown: "이름 없는 웹사이트", browser: "브라우저 페이지", local: "로컬 파일", newTab: "새 탭",
+    "Lark Docs": "Lark 문서", "Feishu": "Feishu", "Feishu Docs": "Feishu 문서",
+    "Feishu Project": "Feishu 프로젝트", "哔哩哔哩": "bilibili"
+  },
+  ja: {
+    unknown: "名前のないサイト", browser: "ブラウザのページ", local: "ローカルファイル", newTab: "新しいタブ",
+    "Lark Docs": "Lark ドキュメント", "Feishu": "Feishu", "Feishu Docs": "Feishu ドキュメント",
+    "Feishu Project": "Feishu プロジェクト", "哔哩哔哩": "bilibili"
+  }
+};
+
+const SITE_SEARCH_ALIASES = {
+  "Meegle": ["Lark Project", "Lark 项目"],
+  "Feishu Project": ["飞书项目"],
+  "Lark Docs": ["Lark 云文档", "Lark 文档"],
+  "Feishu Docs": ["飞书云文档", "飞书文档"],
+  "OKX": ["欧易"]
+};
+
+function siteLabels(locale = "zh-CN") {
+  const language = String(locale).toLowerCase().split(/[-_]/)[0];
+  return SITE_LABELS[language === "zh" ? "zh-CN" : language] || SITE_LABELS.en;
+}
 
 const CATEGORY_RULES = [
   {
@@ -156,12 +197,13 @@ function normalizeUrl(value = "") {
   return url ? url.href : String(value ?? "").trim();
 }
 
-function getDisplayHost(value = "") {
+function getDisplayHost(value = "", locale = "zh-CN") {
   const url = safeUrl(value);
-  if (!url) return "New tab";
-  if (["chrome:", "edge:", "about:"].includes(url.protocol)) return "Browser";
-  if (url.protocol === "file:") return "Local file";
-  return url.host.replace(/^www\./, "") || "Browser";
+  const labels = siteLabels(locale);
+  if (!url) return labels.newTab;
+  if (["chrome:", "edge:", "about:"].includes(url.protocol)) return labels.browser;
+  if (url.protocol === "file:") return labels.local;
+  return url.host.replace(/^www\./, "") || labels.browser;
 }
 
 function knownSiteForUrl(url) {
@@ -172,13 +214,24 @@ function knownSiteForUrl(url) {
     .sort((a, b) => b[0].length - a[0].length)[0] || null;
 }
 
-function getSiteName(value = "") {
+function knownSiteName(url, knownSite) {
+  if (!knownSite) return null;
+  const [domain, name, options] = knownSite;
+  // The suite home page is its brand; a tenant host is its document workspace.
+  return options?.tenantName && url.hostname !== domain && url.hostname !== `www.${domain}`
+    ? options.tenantName
+    : name;
+}
+
+function getSiteName(value = "", locale = "zh-CN") {
   const url = safeUrl(value);
-  if (!url) return "未命名网站";
-  if (["chrome:", "edge:", "about:"].includes(url.protocol)) return "浏览器页面";
-  if (url.protocol === "file:") return "本地文件";
+  const labels = siteLabels(locale);
+  if (!url) return labels.unknown;
+  if (["chrome:", "edge:", "about:"].includes(url.protocol)) return labels.browser;
+  if (url.protocol === "file:") return labels.local;
   const knownSite = knownSiteForUrl(url);
-  return knownSite?.[1] || url.host || url.protocol.replace(/:$/, "");
+  const name = knownSiteName(url, knownSite);
+  return labels[name] || name || url.host || url.protocol.replace(/:$/, "");
 }
 
 function getSiteKey(value = "") {
@@ -187,6 +240,9 @@ function getSiteKey(value = "") {
   if (["chrome:", "edge:", "about:"].includes(url.protocol)) return "browser";
   if (url.protocol === "file:") return "local file";
   const knownSite = knownSiteForUrl(url);
+  // Friendly labels must not collapse separate tenant workspaces or products.
+  // This identity is deliberately independent of the selected UI language.
+  if (knownSite?.[2]?.hostScoped) return `host:${url.host}`;
   if (knownSite) return knownSite[1].toLowerCase();
 
   // Without a public suffix list, full hosts are safer than guessing a root
@@ -196,16 +252,20 @@ function getSiteKey(value = "") {
     : `${url.protocol}//${url.host}`;
 }
 
-function matchesQuery(tab, query) {
+function matchesQuery(tab, query, locale = "zh-CN") {
   const needle = query.trim().toLocaleLowerCase();
   if (!needle) return true;
-  return [tab.title, tab.url, getDisplayHost(tab.url), getSiteName(tab.url)]
+  const url = safeUrl(tab.url);
+  const name = knownSiteName(url, knownSiteForUrl(url));
+  const aliases = name ? [name, ...(SITE_SEARCH_ALIASES[name] || []),
+    ...Object.values(SITE_LABELS).map((labels) => labels[name])] : [];
+  return [tab.title, tab.url, getDisplayHost(tab.url, locale), getSiteName(tab.url, locale), ...aliases]
     .filter(Boolean)
     .some((value) => value.toLocaleLowerCase().includes(needle));
 }
 
 function classifyTab(tab) {
-  const host = getDisplayHost(tab.url).toLowerCase();
+  const host = getSiteKey(tab.url) === "browser" ? "browser" : getDisplayHost(tab.url).toLowerCase();
   const title = (tab.title || "").toLowerCase();
   const match = CATEGORY_RULES.find((rule) =>
     rule.hosts.some((item) => host === item || host.endsWith(`.${item}`)) ||
@@ -324,7 +384,10 @@ const { brandIcon, uiIcon } = iconsModule;
 
 const hasExtensionApi = Boolean(globalThis.chrome?.runtime?.id && globalThis.chrome?.windows);
 const demoMode = !hasExtensionApi || new URLSearchParams(location.search).has("demo");
-const state = { windows: [], query: "", sort: "count", duplicatesOnly: false, selected: new Set(), error: "", closing: false };
+const i18n = globalThis.OrbitI18n;
+const t = (key, params) => i18n.t(key, params);
+const number = (value) => new Intl.NumberFormat(i18n.locale).format(value);
+const state = { windows: [], query: "", sort: "count", duplicatesOnly: false, selected: new Set(), error: "", closing: false, syncing: false };
 const $ = (id) => document.getElementById(id);
 const elements = {
   search: $("global-search"), sites: $("sites-list"), dialog: $("action-dialog"),
@@ -332,8 +395,12 @@ const elements = {
 };
 const escapeHtml = (value = "") => String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 let readSequence = 0;
+const pendingReads = new Set();
+let manualSyncRequested = false;
 let confirmHandler = null;
 let dialogOrigin = null;
+let dialogDescription = null;
+const activeToasts = new Map();
 
 function callApi(context, method, ...args) {
   return new Promise((resolve, reject) => {
@@ -376,7 +443,11 @@ function demoFixtures() {
     ["X", "收藏的文章", "https://x.com/i/bookmarks"],
     ["X", "OpenAI", "https://x.com/OpenAI"],
     ["TradingView", "BTCUSD · Bitcoin / U.S. Dollar", "https://www.tradingview.com/chart/BTC"],
-    ["TradingView", "NASDAQ · Market overview", "https://www.tradingview.com/markets/stocks-usa/"]
+    ["TradingView", "NASDAQ · Market overview", "https://www.tradingview.com/markets/stocks-usa/"],
+    ["Lark Docs", "Weekly notes · Team workspace", "https://sample.sg.larksuite.com/wiki/weekly"],
+    ["Lark Docs", "A calmer workspace · Ideas", "https://sample.sg.larksuite.com/docx/ideas"],
+    ["Meegle", "Orbit · Product roadmap", "https://project.larksuite.com/demo/roadmap"],
+    ["OKX", "Market overview", "https://www.okx.com/markets"]
   ];
   const tabs = samples.map(([, title, url], i) => ({
     id: i + 1, title, url, lastAccessed: Date.now() - (i + 1) * 80000,
@@ -393,17 +464,32 @@ async function readWindows() {
   return callApi(chrome.windows, "getAll", { populate: true, windowTypes: ["normal"] });
 }
 
-async function loadState() {
+async function loadState({ manual = false } = {}) {
+  if (manual && (state.syncing || state.closing)) return;
+  if (manual) manualSyncRequested = true;
   const sequence = ++readSequence;
+  // Superseded reads must not keep the retry control busy after the newest read settles.
+  pendingReads.clear();
+  pendingReads.add(sequence);
+  state.syncing = true;
+  render();
   try {
     const windows = await readWindows();
     if (sequence !== readSequence) return;
     state.windows = windows;
     state.error = "";
-    render();
+    if (manualSyncRequested) toast(() => t(demoMode ? "sync.demoSuccess" : "sync.success"));
+    manualSyncRequested = false;
   } catch (error) {
     if (sequence !== readSequence) return;
-    state.error = error.message || "请重新打开 Orbit";
+    state.error = error.message || null;
+    // Keep the last successful snapshot; never show demo data on API failure.
+    if (manualSyncRequested) toast(() => t("sync.failedToast"));
+    manualSyncRequested = false;
+  } finally {
+    pendingReads.delete(sequence);
+    state.syncing = pendingReads.size > 0;
+    if (!state.syncing) manualSyncRequested = false;
     render();
   }
 }
@@ -418,11 +504,11 @@ function groupSites(tabs) {
   const groups = new Map();
   for (const tab of tabs) {
     const key = getSiteKey(tab.url);
-    if (!groups.has(key)) groups.set(key, { key, name: getSiteName(tab.url), host: getDisplayHost(tab.url), tabs: [] });
+    if (!groups.has(key)) groups.set(key, { key, name: getSiteName(tab.url, i18n.locale), host: getDisplayHost(tab.url, i18n.locale), tabs: [] });
     groups.get(key).tabs.push(tab);
   }
   const sites = [...groups.values()];
-  const byName = (a, b) => a.name.localeCompare(b.name, "zh-CN", { numeric: true });
+  const byName = (a, b) => a.name.localeCompare(b.name, i18n.locale, { numeric: true });
   sites.sort((a, b) => {
     if (state.sort === "name") return byName(a, b);
     if (state.sort === "recent") return Math.max(...b.tabs.map((t) => t.lastAccessed || 0)) - Math.max(...a.tabs.map((t) => t.lastAccessed || 0)) || byName(a, b);
@@ -440,7 +526,7 @@ function logoMarkup(site) {
     url.searchParams.set("size", "64");
     src = url.href;
   }
-  return '<span class="site-logo" role="img" aria-label="' + escapeHtml(site.name + " Logo") + '">' + fallback +
+  return '<span class="site-logo" role="img" aria-label="' + escapeHtml(t("site.logo", { name: site.name })) + '">' + fallback +
     (src ? '<img src="' + escapeHtml(src) + '" alt="" decoding="async" />' : "") + "</span>";
 }
 
@@ -448,39 +534,62 @@ function pagePath(tab) {
   try {
     const url = new URL(tab.url);
     const path = decodeURI(url.pathname + url.search + url.hash);
-    return path === "/" ? getDisplayHost(tab.url) : path;
-  } catch { return getDisplayHost(tab.url); }
+    return path === "/" ? getDisplayHost(tab.url, i18n.locale) : path;
+  } catch { return getDisplayHost(tab.url, i18n.locale); }
 }
 
 function tabMarkup(tab, duplicateIds) {
   const duplicate = duplicateIds.has(tab.id);
-  const title = tab.title || getSiteName(tab.url) || "未命名页面";
+  const title = tab.title || getSiteName(tab.url, i18n.locale) || t("tab.untitled");
   const checkbox = state.duplicatesOnly && duplicate
-    ? '<input id="select-' + tab.id + '" class="tab-select" type="checkbox" data-action="select-tab" data-tab-id="' + tab.id + '" aria-label="' + escapeHtml("选择重复页面：" + title) + '" ' + (state.selected.has(tab.id) ? "checked" : "") + ' />' : "";
+    ? '<input id="select-' + tab.id + '" class="tab-select" type="checkbox" data-action="select-tab" data-tab-id="' + tab.id + '" aria-label="' + escapeHtml(t("tab.select", { title })) + '" ' + (state.selected.has(tab.id) ? "checked" : "") + ' />' : "";
   const detail = escapeHtml(pagePath(tab));
   return '<div class="tab-row' + (tab.active ? " is-active" : "") + '" data-tab-id="' + tab.id + '">' + checkbox +
-    '<button class="tab-focus" data-action="focus-tab" data-tab-id="' + tab.id + '" title="' + escapeHtml(title + "\n" + tab.url) + '" aria-label="' + escapeHtml("切换到：" + title) + '">' +
+    '<button class="tab-focus" data-action="focus-tab" data-tab-id="' + tab.id + '" title="' + escapeHtml(title + "\n" + tab.url) + '" aria-label="' + escapeHtml(t("tab.focus", { title })) + '">' +
     '<span class="page-icon' + (tab.pinned ? " is-pinned" : "") + '">' + uiIcon(tab.audible ? "sound" : tab.pinned ? "pin" : "page") + '</span>' +
     '<span class="tab-copy"><span class="tab-title">' + escapeHtml(title) + '</span><span class="tab-meta">' +
-    (duplicate ? '<span class="duplicate-badge">重复</span>' : "") +
-    (tab.active ? '<span class="active-badge">正在使用</span>' : "") +
-    (tab.pinned ? '<span class="active-badge">已固定</span>' : "") +
-    (tab.discarded ? '<span>已休眠</span>' : "") +
+    (duplicate ? '<span class="duplicate-badge">' + escapeHtml(t("tab.duplicate")) + '</span>' : "") +
+    (tab.active ? '<span class="active-badge">' + escapeHtml(t("tab.active")) + '</span>' : "") +
+    (tab.pinned ? '<span class="active-badge">' + escapeHtml(t("tab.pinned")) + '</span>' : "") +
+    (tab.discarded ? '<span>' + escapeHtml(t("tab.discarded")) + '</span>' : "") +
     '<span class="tab-path">' + detail + '</span>' +
-    (state.windows.length > 1 ? '<span>· 窗口 ' + tab.windowNumber + '</span>' : "") +
-    '</span></span></button><button class="tab-close" data-action="close-tab" data-tab-id="' + tab.id + '" title="关闭页面" aria-label="' + escapeHtml("关闭：" + title) + '">' + uiIcon("close") + '</button></div>';
+    (state.windows.length > 1 ? '<span>· ' + escapeHtml(t("tab.window", { number: number(tab.windowNumber) })) + '</span>' : "") +
+    '</span></span></button><button class="tab-close" data-action="close-tab" data-tab-id="' + tab.id + '" title="' + escapeHtml(t("tab.closeTitle")) + '" aria-label="' + escapeHtml(t("tab.close", { title })) + '">' + uiIcon("close") + '</button></div>';
 }
 
 function siteMarkup(site, shownTabs, duplicateIds) {
   return '<article class="site-card" data-site-key="' + escapeHtml(site.key) + '">' +
     '<header class="site-header">' + logoMarkup(site) +
     '<div class="site-title"><h3>' + escapeHtml(site.name) + '</h3><p>' + escapeHtml(site.host) + '</p></div>' +
-    '<span class="site-total" title="标签页数量">' + (shownTabs.length === site.tabs.length ? site.tabs.length : shownTabs.length + "/" + site.tabs.length) + '</span></header>' +
+    '<span class="site-total" title="' + escapeHtml(t("site.total")) + '">' + (shownTabs.length === site.tabs.length ? number(site.tabs.length) : number(shownTabs.length) + "/" + number(site.tabs.length)) + '</span></header>' +
     '<div class="site-tabs">' + shownTabs.map((tab) => tabMarkup(tab, duplicateIds)).join("") + '</div></article>';
 }
 
 function emptyMarkup(title, description, action = "") {
   return '<div class="empty-state"><strong>' + escapeHtml(title) + '</strong><p>' + escapeHtml(description) + '</p>' + action + '</div>';
+}
+
+function renderSync() {
+  const failed = state.error !== "";
+  $("sync-label").textContent = t(state.syncing ? "sync.loading" : failed ? "sync.failure" : demoMode ? "sync.demo" : "sync.live");
+  $("sync-status").classList.toggle("is-demo", demoMode);
+  $("sync-status").classList.toggle("is-error", failed && !state.syncing);
+  $("sync-status").classList.toggle("is-loading", state.syncing);
+  const button = $("sync-button");
+  if (button) {
+    const label = t(state.syncing ? "sync.loading" : failed ? "sync.retry" : "sync.manual");
+    button.disabled = state.syncing || state.closing;
+    button.setAttribute("aria-busy", String(state.syncing));
+    button.setAttribute("aria-label", label);
+    button.setAttribute("title", label);
+    button.classList.toggle("is-loading", state.syncing);
+    $("sync-button-label").textContent = label;
+  }
+}
+
+function countText(key, count, emphasize = false) {
+  const value = number(count);
+  return t(key, { count: emphasize ? "<strong>" + value + "</strong>" : value, _count: count });
 }
 
 function render() {
@@ -489,40 +598,38 @@ function render() {
   const sites = groupSites(tabs);
   const duplicates = new Set(findDuplicateTabIds(tabs, location.href));
   state.selected = new Set([...state.selected].filter((id) => duplicates.has(id)));
-  $("hero-summary").innerHTML = '共 <strong>' + tabs.length + '</strong> 个标签页，来自 <strong>' + sites.length + '</strong> 个网站' + (state.windows.length > 1 ? '、<strong>' + state.windows.length + '</strong> 个窗口' : "") + '。';
-  $("sync-label").textContent = state.error ? "同步中断" : demoMode ? "预览模式" : "已实时同步";
-  $("sync-status").classList.toggle("is-demo", demoMode);
-  $("sync-status").classList.toggle("is-error", Boolean(state.error));
+  $("hero-summary").innerHTML = t("summary", { tabs: countText("summary.tabs", tabs.length, true), sites: countText("summary.sites", sites.length, true), windows: state.windows.length > 1 ? countText("summary.windows", state.windows.length, true) : "" });
+  renderSync();
   $("demo-notice").hidden = !demoMode;
-  $("site-count").textContent = sites.length;
-  $("duplicate-count").textContent = duplicates.size;
+  $("site-count").textContent = number(sites.length);
+  $("duplicate-count").textContent = number(duplicates.size);
   for (const [id, active] of [["all-filter", !state.duplicatesOnly], ["duplicate-filter", state.duplicatesOnly]]) {
     $(id).classList.toggle("is-active", active);
     $(id).setAttribute("aria-pressed", String(active));
   }
   elements.selection.hidden = !state.duplicatesOnly || !duplicates.size;
-  $("selection-summary").textContent = "已选 " + state.selected.size + " / " + duplicates.size + " 个重复项";
-  const visibleDuplicateIds = tabs.filter((tab) => duplicates.has(tab.id) && matchesQuery(tab, state.query)).map((tab) => tab.id);
-  $("select-all").textContent = visibleDuplicateIds.length && visibleDuplicateIds.every((id) => state.selected.has(id)) ? "取消全选" : "全选重复项";
+  $("selection-summary").textContent = t("selection.summary", { selected: number(state.selected.size), total: number(duplicates.size) });
+  const visibleDuplicateIds = tabs.filter((tab) => duplicates.has(tab.id) && matchesQuery(tab, state.query, i18n.locale)).map((tab) => tab.id);
+  $("select-all").textContent = t(visibleDuplicateIds.length && visibleDuplicateIds.every((id) => state.selected.has(id)) ? "selection.none" : "selection.all");
   $("select-all").disabled = !visibleDuplicateIds.length;
   elements.closeSelected.disabled = !state.selected.size || state.closing;
-  elements.closeSelected.textContent = state.selected.size ? "关闭选中项（" + state.selected.size + "）" : "关闭选中项";
-  $("results-heading").textContent = state.duplicatesOnly ? "包含重复页面的网站" : "已打开的网站";
+  elements.closeSelected.textContent = t(state.selected.size ? "selection.closeCount" : "selection.close", { count: number(state.selected.size) });
+  $("results-heading").textContent = t(state.duplicatesOnly ? "results.duplicates" : "results.all");
   const results = sites.flatMap((site) => {
     if (state.duplicatesOnly && !site.tabs.some((tab) => duplicates.has(tab.id))) return [];
-    const shown = site.tabs.filter((tab) => matchesQuery(tab, state.query));
+    const shown = site.tabs.filter((tab) => matchesQuery(tab, state.query, i18n.locale));
     return shown.length ? [{ site, shown }] : [];
   });
-  $("results-summary").textContent = state.query.trim() ? "找到 " + results.reduce((n, item) => n + item.shown.length, 0) + " 个页面 · " + results.length + " 个网站" : "按网站自动汇总 · 点击页面即可切换";
+  $("results-summary").textContent = state.query.trim() ? t("results.summary", { tabs: countText("summary.tabs", results.reduce((n, item) => n + item.shown.length, 0)), sites: countText("summary.sites", results.length) }) : t("results.hint");
   elements.sites.innerHTML = results.map(({ site, shown }) => siteMarkup(site, shown, duplicates)).join("");
-  if (state.error) {
-    elements.sites.innerHTML = emptyMarkup("暂时无法同步标签页", state.error, '<button class="secondary-button" data-action="retry">重新同步</button>') + elements.sites.innerHTML;
+  if (state.error !== "") {
+    elements.sites.innerHTML = emptyMarkup(t("sync.errorTitle"), t("sync.errorDescription", { error: state.error || t("sync.unknownError") }), '<button class="secondary-button" data-action="retry"' + (state.syncing || state.closing ? ' disabled' : '') + '>' + escapeHtml(t(state.syncing ? "sync.loading" : "sync.retry")) + '</button>') + elements.sites.innerHTML;
   } else if (!results.length) {
     elements.sites.innerHTML = state.query.trim()
-      ? emptyMarkup("没有找到相关页面", "试试网站名称、网页标题或网址。", '<button class="secondary-button" data-action="clear-search">清除搜索</button>')
+      ? emptyMarkup(t("empty.searchTitle"), t("empty.searchDescription"), '<button class="secondary-button" data-action="clear-search">' + escapeHtml(t("empty.clear")) + '</button>')
       : state.duplicatesOnly
-        ? emptyMarkup("没有可清理的重复项", "相同网址只保留一份；固定、正在使用或播放声音的页面会受到保护。", '<button class="secondary-button" data-action="show-all">查看全部网站</button>')
-        : emptyMarkup("这里还没有打开的页面", "打开几个网页，它们就会按网站出现在这里。");
+        ? emptyMarkup(t("empty.duplicatesTitle"), t("empty.duplicatesDescription"), '<button class="secondary-button" data-action="show-all">' + escapeHtml(t("empty.all")) + '</button>')
+        : emptyMarkup(t("empty.title"), t("empty.description"));
   }
   if (focusId?.startsWith("select-")) $(focusId)?.focus({ preventScroll: true });
 }
@@ -530,26 +637,37 @@ function render() {
 function updateGreeting() {
   const now = new Date();
   const hour = now.getHours();
-  const greeting = hour < 5 ? "夜深了" : hour < 11 ? "早上好" : hour < 14 ? "中午好" : hour < 18 ? "下午好" : "晚上好";
-  $("time-greeting").innerHTML = greeting + '，<span>所有页面都在这里。</span>';
-  $("today-date").textContent = new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(now);
+  const greeting = hour < 5 ? "night" : hour < 11 ? "morning" : hour < 14 ? "noon" : hour < 18 ? "afternoon" : "evening";
+  $("time-greeting").innerHTML = escapeHtml(t("greeting." + greeting)) + '<span>' + escapeHtml(t("greeting." + greeting + "Note")) + '</span>';
+  $("today-date").textContent = new Intl.DateTimeFormat(i18n.locale, { month: "long", day: "numeric", weekday: "long" }).format(now);
 }
 
 function toast(message) {
   const item = document.createElement("div");
   item.className = "toast";
-  item.textContent = message;
+  const resolve = typeof message === "function" ? message : () => message;
+  activeToasts.set(item, resolve);
+  item.textContent = resolve();
   $("toast-region").append(item);
-  setTimeout(() => item.remove(), 4200);
+  setTimeout(() => { activeToasts.delete(item); item.remove(); }, 4200);
 }
 
-function openDialog({ title, description, content = "", confirmLabel = "确认", danger = false, onConfirm }) {
+function renderDialog() {
+  if (!dialogDescription) return;
+  const { title, description, content = "", confirmLabel = () => t("dialog.confirm") } = dialogDescription;
+  const resolve = (value) => typeof value === "function" ? value() : value;
+  $("dialog-title").textContent = resolve(title);
+  $("dialog-description").textContent = resolve(description);
+  $("dialog-content").innerHTML = resolve(content);
+  elements.confirm.textContent = resolve(confirmLabel);
+}
+
+function openDialog(description) {
+  const { danger = false, onConfirm } = description;
   dialogOrigin = document.activeElement;
-  $("dialog-title").textContent = title;
-  $("dialog-description").textContent = description;
-  $("dialog-content").innerHTML = content;
+  dialogDescription = description;
+  renderDialog();
   $("dialog-cancel").hidden = !onConfirm;
-  elements.confirm.textContent = confirmLabel;
   elements.confirm.className = danger ? "danger-button" : "primary-button";
   elements.confirm.disabled = false;
   confirmHandler = onConfirm || (() => true);
@@ -561,15 +679,17 @@ function closeDialog() {
   if (state.closing) return;
   elements.dialog.close();
   confirmHandler = null;
+  dialogDescription = null;
   if (dialogOrigin?.isConnected) dialogOrigin.focus({ preventScroll: true });
 }
 
 function showHelp() {
   openDialog({
-    title: "把已打开的页面，汇总到这里",
-    description: "在 Chrome 中点击 Orbit 图标，即可查看所有窗口的标签页。每个网站的页面都会直接展开。",
-    content: '<ol><li>在 Chrome 地址栏打开 <strong>chrome://extensions</strong>。</li><li>开启“开发者模式”，点击“加载已解压的扩展程序”，选择解压后包含 <strong>manifest.json</strong> 的扩展文件夹；从源码打包时选择 <strong>dist/Orbit</strong>。</li><li>已安装过 Orbit？点击扩展卡片上的刷新按钮，再打开 Orbit。</li></ol><p>快捷打开：Mac 使用 ⌘ ⇧ 0，Windows 使用 Ctrl Shift 0。</p>',
-    confirmLabel: "知道了"
+    title: () => t("help.title"),
+    description: () => t("help.description"),
+    content: () => '<ol>' + (demoMode ? ["help.demo1", "help.demo2", "help.demo3"] : ["help.step1", "help.step2", "help.step3"]).map((key) => '<li>' + escapeHtml(t(key)) + '</li>').join("") + '</ol>' +
+      (demoMode ? "" : '<p>' + escapeHtml(t("help.privacy")) + '</p>') + '<p>' + escapeHtml(t("help.preferences")) + '</p><p>' + escapeHtml(t("help.shortcut")) + '</p>',
+    confirmLabel: () => t("dialog.gotIt")
   });
 }
 
@@ -582,7 +702,7 @@ async function focusTab(id) {
       if (win.id === tab.windowId) win.tabs.forEach((t) => { t.active = t.id === tab.id; });
     }
     render();
-    toast("预览：已选中「" + tab.title + "」");
+    toast(() => t("toast.previewFocus", { title: tab.title || t("tab.untitled") }));
     return;
   }
   await callApi(chrome.tabs, "update", tab.id, { active: true });
@@ -613,24 +733,30 @@ function confirmCloseDuplicates() {
   const selected = selectedSnapshot();
   if (!selected.length) return;
   openDialog({
-    title: "关闭 " + selected.length + " 个重复页面？",
-    description: "仅关闭下面勾选的页面。同网址的另一份页面会保留。",
+    title: () => t("duplicates.title", { count: number(selected.length), _count: selected.length }),
+    description: () => t("duplicates.description"),
     content: '<ul class="dialog-tab-list">' + selected.map((tab) => '<li>' + escapeHtml(tab.title || tab.url) + '</li>').join("") + "</ul>",
-    confirmLabel: "确认关闭", danger: true,
+    confirmLabel: () => t("duplicates.confirm"), danger: true,
     onConfirm: async () => {
       state.closing = true;
+      renderSync();
       try {
         // Re-read before removal: a selected tab may have navigated or become active.
         const sequence = ++readSequence;
+        pendingReads.clear();
+        state.syncing = false;
+        manualSyncRequested = false;
+        renderSync();
         const fresh = await readWindows();
-        if (sequence !== readSequence) { toast("标签页正在变化，请重新确认。"); return true; }
+        if (sequence !== readSequence) { toast(() => t("toast.changed")); return true; }
         state.windows = fresh;
+        state.error = "";
         const current = tabRecords();
         const duplicates = new Set(findDuplicateTabIds(current, location.href));
         const ids = selected.filter((old) => duplicates.has(old.id) && current.some((tab) => tab.id === old.id && tab.url === old.url)).map((tab) => tab.id);
         await removeTabs(ids);
         state.selected.clear();
-        toast(ids.length ? "已关闭 " + ids.length + " 个重复页面。" + (ids.length < selected.length ? " 已跳过状态发生变化的页面。" : "") : "页面状态已变化，本次未关闭任何页面。");
+        toast(() => ids.length ? t("toast.duplicatesClosed", { count: number(ids.length), _count: ids.length }) + (ids.length < selected.length ? t("toast.skipped") : "") : t("toast.noneClosed"));
         return true;
       } finally { state.closing = false; render(); }
     }
@@ -640,14 +766,15 @@ function confirmCloseDuplicates() {
 async function handleAction(action, target) {
   switch (action) {
     case "help": showHelp(); break;
-    case "retry": await loadState(); break;
+    case "sync":
+    case "retry": await loadState({ manual: true }); break;
     case "show-all": state.duplicatesOnly = false; state.selected.clear(); render(); break;
     case "show-duplicates":
       state.duplicatesOnly = true; state.query = ""; elements.search.value = ""; state.selected.clear(); render(); break;
     case "clear-search": state.query = ""; elements.search.value = ""; render(); elements.search.focus(); break;
     case "select-all": {
       const ids = findDuplicateTabIds(tabRecords(), location.href);
-      const visibleIds = ids.filter((id) => tabRecords().some((tab) => tab.id === id && matchesQuery(tab, state.query)));
+      const visibleIds = ids.filter((id) => tabRecords().some((tab) => tab.id === id && matchesQuery(tab, state.query, i18n.locale)));
       const all = visibleIds.length > 0 && visibleIds.every((id) => state.selected.has(id));
       for (const id of visibleIds) all ? state.selected.delete(id) : state.selected.add(id);
       render(); break;
@@ -657,7 +784,7 @@ async function handleAction(action, target) {
     case "close-tab":
       if (state.closing) return;
       target.disabled = true;
-      try { await removeTabs([Number(target.dataset.tabId)]); toast("页面已关闭"); }
+      try { await removeTabs([Number(target.dataset.tabId)]); toast(() => t("toast.tabClosed")); }
       finally { target.disabled = false; }
       break;
     case "close-dialog": closeDialog(); break;
@@ -669,7 +796,7 @@ document.addEventListener("click", async (event) => {
   if (!target || target.matches("input")) return;
   event.preventDefault();
   try { await handleAction(target.dataset.action, target); }
-  catch (error) { toast("操作未完成：" + error.message); }
+  catch (error) { toast(() => t("toast.failed", { error: error.message || t("sync.unknownError") })); }
 });
 
 document.addEventListener("change", (event) => {
@@ -693,7 +820,7 @@ elements.confirm.addEventListener("click", async () => {
   if (!confirmHandler || elements.confirm.disabled) return;
   elements.confirm.disabled = true;
   try { if (await confirmHandler() !== false) closeDialog(); }
-  catch (error) { toast("操作未完成：" + error.message); }
+  catch (error) { toast(() => t("toast.failed", { error: error.message || t("sync.unknownError") })); }
   finally { elements.confirm.disabled = false; }
 });
 elements.dialog.addEventListener("cancel", (event) => { event.preventDefault(); closeDialog(); });
@@ -722,6 +849,12 @@ if (!demoMode) {
     .forEach((event) => event?.addListener(scheduleRefresh));
 }
 $("search-shortcut").textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘ K" : "Ctrl K";
+i18n.subscribe(() => {
+  updateGreeting();
+  render();
+  renderDialog();
+  for (const [item, resolve] of activeToasts) item.textContent = resolve();
+});
 updateGreeting();
 setInterval(updateGreeting, 60000);
 loadState();

@@ -26,10 +26,51 @@ const SITE_NAMES = [
   ["gmail.com", "Gmail"],
   ["mail.google.com", "Gmail"],
   ["google.com", "Google"],
+  ["project.larksuite.com", "Meegle", { hostScoped: true }],
+  ["project.feishu.cn", "Feishu Project", { hostScoped: true }],
+  ["larksuite.com", "Lark", { hostScoped: true, tenantName: "Lark Docs" }],
+  ["feishu.cn", "Feishu", { hostScoped: true, tenantName: "Feishu Docs" }],
+  ["okx.com", "OKX"],
   ["linkedin.com", "LinkedIn"],
   ["reddit.com", "Reddit"],
   ["bilibili.com", "哔哩哔哩"]
 ];
+
+const SITE_LABELS = {
+  "zh-CN": {
+    unknown: "未命名网站", browser: "浏览器页面", local: "本地文件", newTab: "新标签页",
+    "Lark Docs": "Lark 云文档", "Feishu": "飞书", "Feishu Docs": "飞书云文档",
+    "Feishu Project": "飞书项目", "哔哩哔哩": "哔哩哔哩"
+  },
+  en: {
+    unknown: "Unnamed website", browser: "Browser page", local: "Local file", newTab: "New tab",
+    "Lark Docs": "Lark Docs", "Feishu": "Feishu", "Feishu Docs": "Feishu Docs",
+    "Feishu Project": "Feishu Project", "哔哩哔哩": "bilibili"
+  },
+  ko: {
+    unknown: "이름 없는 웹사이트", browser: "브라우저 페이지", local: "로컬 파일", newTab: "새 탭",
+    "Lark Docs": "Lark 문서", "Feishu": "Feishu", "Feishu Docs": "Feishu 문서",
+    "Feishu Project": "Feishu 프로젝트", "哔哩哔哩": "bilibili"
+  },
+  ja: {
+    unknown: "名前のないサイト", browser: "ブラウザのページ", local: "ローカルファイル", newTab: "新しいタブ",
+    "Lark Docs": "Lark ドキュメント", "Feishu": "Feishu", "Feishu Docs": "Feishu ドキュメント",
+    "Feishu Project": "Feishu プロジェクト", "哔哩哔哩": "bilibili"
+  }
+};
+
+const SITE_SEARCH_ALIASES = {
+  "Meegle": ["Lark Project", "Lark 项目"],
+  "Feishu Project": ["飞书项目"],
+  "Lark Docs": ["Lark 云文档", "Lark 文档"],
+  "Feishu Docs": ["飞书云文档", "飞书文档"],
+  "OKX": ["欧易"]
+};
+
+function siteLabels(locale = "zh-CN") {
+  const language = String(locale).toLowerCase().split(/[-_]/)[0];
+  return SITE_LABELS[language === "zh" ? "zh-CN" : language] || SITE_LABELS.en;
+}
 
 const CATEGORY_RULES = [
   {
@@ -152,12 +193,13 @@ export function normalizeUrl(value = "") {
   return url ? url.href : String(value ?? "").trim();
 }
 
-export function getDisplayHost(value = "") {
+export function getDisplayHost(value = "", locale = "zh-CN") {
   const url = safeUrl(value);
-  if (!url) return "New tab";
-  if (["chrome:", "edge:", "about:"].includes(url.protocol)) return "Browser";
-  if (url.protocol === "file:") return "Local file";
-  return url.host.replace(/^www\./, "") || "Browser";
+  const labels = siteLabels(locale);
+  if (!url) return labels.newTab;
+  if (["chrome:", "edge:", "about:"].includes(url.protocol)) return labels.browser;
+  if (url.protocol === "file:") return labels.local;
+  return url.host.replace(/^www\./, "") || labels.browser;
 }
 
 function knownSiteForUrl(url) {
@@ -168,13 +210,24 @@ function knownSiteForUrl(url) {
     .sort((a, b) => b[0].length - a[0].length)[0] || null;
 }
 
-export function getSiteName(value = "") {
+function knownSiteName(url, knownSite) {
+  if (!knownSite) return null;
+  const [domain, name, options] = knownSite;
+  // The suite home page is its brand; a tenant host is its document workspace.
+  return options?.tenantName && url.hostname !== domain && url.hostname !== `www.${domain}`
+    ? options.tenantName
+    : name;
+}
+
+export function getSiteName(value = "", locale = "zh-CN") {
   const url = safeUrl(value);
-  if (!url) return "未命名网站";
-  if (["chrome:", "edge:", "about:"].includes(url.protocol)) return "浏览器页面";
-  if (url.protocol === "file:") return "本地文件";
+  const labels = siteLabels(locale);
+  if (!url) return labels.unknown;
+  if (["chrome:", "edge:", "about:"].includes(url.protocol)) return labels.browser;
+  if (url.protocol === "file:") return labels.local;
   const knownSite = knownSiteForUrl(url);
-  return knownSite?.[1] || url.host || url.protocol.replace(/:$/, "");
+  const name = knownSiteName(url, knownSite);
+  return labels[name] || name || url.host || url.protocol.replace(/:$/, "");
 }
 
 export function getSiteKey(value = "") {
@@ -183,6 +236,9 @@ export function getSiteKey(value = "") {
   if (["chrome:", "edge:", "about:"].includes(url.protocol)) return "browser";
   if (url.protocol === "file:") return "local file";
   const knownSite = knownSiteForUrl(url);
+  // Friendly labels must not collapse separate tenant workspaces or products.
+  // This identity is deliberately independent of the selected UI language.
+  if (knownSite?.[2]?.hostScoped) return `host:${url.host}`;
   if (knownSite) return knownSite[1].toLowerCase();
 
   // Without a public suffix list, full hosts are safer than guessing a root
@@ -192,16 +248,20 @@ export function getSiteKey(value = "") {
     : `${url.protocol}//${url.host}`;
 }
 
-export function matchesQuery(tab, query) {
+export function matchesQuery(tab, query, locale = "zh-CN") {
   const needle = query.trim().toLocaleLowerCase();
   if (!needle) return true;
-  return [tab.title, tab.url, getDisplayHost(tab.url), getSiteName(tab.url)]
+  const url = safeUrl(tab.url);
+  const name = knownSiteName(url, knownSiteForUrl(url));
+  const aliases = name ? [name, ...(SITE_SEARCH_ALIASES[name] || []),
+    ...Object.values(SITE_LABELS).map((labels) => labels[name])] : [];
+  return [tab.title, tab.url, getDisplayHost(tab.url, locale), getSiteName(tab.url, locale), ...aliases]
     .filter(Boolean)
     .some((value) => value.toLocaleLowerCase().includes(needle));
 }
 
 export function classifyTab(tab) {
-  const host = getDisplayHost(tab.url).toLowerCase();
+  const host = getSiteKey(tab.url) === "browser" ? "browser" : getDisplayHost(tab.url).toLowerCase();
   const title = (tab.title || "").toLowerCase();
   const match = CATEGORY_RULES.find((rule) =>
     rule.hosts.some((item) => host === item || host.endsWith(`.${item}`)) ||

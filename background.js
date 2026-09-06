@@ -24,12 +24,5 @@ chrome.commands.onCommand.addListener((command) => {
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   if (reason !== "install") return;
 
-  await chrome.storage.local.set({
-    orbitSettings: {
-      compact: false,
-      onboardingSeen: false
-    },
-    orbitSnapshots: []
-  });
   await openOrbit();
 });
