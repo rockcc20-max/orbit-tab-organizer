@@ -4,11 +4,11 @@
 
 ## 下载插件
 
-**[下载 Orbit v0.6.0 安装包（ZIP）](https://github.com/rockcc20-max/orbit-tab-organizer/releases/download/v0.6.0/orbit-0.6.0.zip)** · [查看发布版本](https://github.com/rockcc20-max/orbit-tab-organizer/releases)
+**[下载 Orbit v0.6.1 安装包（ZIP）](https://github.com/rockcc20-max/orbit-tab-organizer/releases/download/v0.6.1/orbit-0.6.1.zip)** · [查看发布版本](https://github.com/rockcc20-max/orbit-tab-organizer/releases)
 
 安装包已编译好，无需安装 Node.js、npm 或自行构建。下载后解压，再按下方的 [Chrome 安装步骤](#安装到-chrome) 加载即可。
 
-请下载名为 `orbit-0.6.0.zip` 的附件，而不是 GitHub 自动提供的 `Source code (zip)` / `Source code (tar.gz)` 源码包。ZIP 版扩展需要通过 Chrome 的“开发者模式”加载，不能双击 ZIP 自动安装。
+请下载名为 `orbit-0.6.1.zip` 的附件，而不是 GitHub 自动提供的 `Source code (zip)` / `Source code (tar.gz)` 源码包。ZIP 版扩展需要通过 Chrome 的“开发者模式”加载，不能双击 ZIP 自动安装。
 
 ## 功能
 
@@ -16,17 +16,18 @@
 - 根据本机时间显示问候语和日期；紧凑卡片布局适配宽、窄窗口。
 - 右上角切换白天／黑夜模式，默认跟随浏览器；外观偏好只保存在本机。
 - 搜索页面标题、网站名称或网址，按标签页数量、最近访问或名称排序。
+- 左侧切换全部网站／重复标签页并排序，右侧搜索；窄窗口自动分行。
 - 点击页面切回原标签页及窗口；保留最大化、全屏状态，恢复最小化窗口。
 - 查看重复标签页，勾选后确认批量关闭；也可单独关闭任意页面。
 - 监听标签页与窗口变化，自动更新；样式和脚本随扩展打包，不依赖 CDN。
 
-当前版本：`0.6.0`，使用 Manifest V3 和本地编译的 Tailwind CSS。
+当前版本：`0.6.1`，使用 Manifest V3 和本地编译的 Tailwind CSS。
 
 ## 安装到 Chrome
 
 使用上面的已编译安装包即可安装，无需编写代码。
 
-1. [下载安装包](https://github.com/rockcc20-max/orbit-tab-organizer/releases/download/v0.6.0/orbit-0.6.0.zip)，解压到一个准备长期保留的文件夹，不要只打开 ZIP 或双击 `manager.html`。
+1. [下载安装包](https://github.com/rockcc20-max/orbit-tab-organizer/releases/download/v0.6.1/orbit-0.6.1.zip)，解压到一个准备长期保留的文件夹，不要只打开 ZIP 或双击 `manager.html`。
 2. 在 Chrome 地址栏输入 `chrome://extensions`，打开右上角“开发者模式”。
 3. 点击“加载已解压的扩展程序”（有些版本显示“加载未打包的扩展程序”），选择解压后**直接包含 `manifest.json` 的文件夹**。从源码构建时，选择 `dist/Orbit/`。
 4. 点击工具栏的拼图图标，将 Orbit 固定；之后点击 Orbit 图标即可打开总览。
@@ -64,7 +65,7 @@ npm run package
 ```
 
 - `npm run check`：重新构建、检查脚本语法并运行自动化测试。
-- `npm run package`：重新构建，生成可加载的 `dist/Orbit/` 和可分享的 `dist/orbit-0.6.0.zip`。
+- `npm run package`：重新构建，生成可加载的 `dist/Orbit/` 和可分享的 `dist/orbit-0.6.1.zip`。
 - 发布包只含运行文件、安装说明、许可证和隐私说明，不含开发依赖或截图。
 
 当前打包脚本调用系统的 `zip` / `unzip`。macOS 通常自带；Linux 需确保已安装；Windows 请使用 WSL 或具备这两个命令的类 Unix 环境。仅运行构建和测试不需要这两个命令。

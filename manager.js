@@ -42,7 +42,7 @@ function demoFixtures() {
     ["GitHub", "Trending repositories", "https://github.com/trending"],
     ["GitHub", "openai / openai-cookbook", "https://github.com/openai/openai-cookbook"],
     ["Notion", "本周待办与工作记录", "https://www.notion.so/weekly"],
-    ["Notion", "产品需求 · 选项卡管理", "https://www.notion.so/tab-manager"],
+    ["Notion", "产品需求 · 标签页管理", "https://www.notion.so/tab-manager"],
     ["Notion", "阅读笔记与灵感", "https://www.notion.so/reading"],
     ["Notion", "本周待办与工作记录", "https://www.notion.so/weekly"],
     ["Google Docs", "Orbit · 产品规划", "https://docs.google.com/document/d/plan/edit"],
@@ -154,7 +154,7 @@ function siteMarkup(site, shownTabs, duplicateIds) {
   return '<article class="site-card" data-site-key="' + escapeHtml(site.key) + '">' +
     '<header class="site-header">' + logoMarkup(site) +
     '<div class="site-title"><h3>' + escapeHtml(site.name) + '</h3><p>' + escapeHtml(site.host) + '</p></div>' +
-    '<span class="site-total" title="选项卡数量">' + (shownTabs.length === site.tabs.length ? site.tabs.length : shownTabs.length + "/" + site.tabs.length) + '</span></header>' +
+    '<span class="site-total" title="标签页数量">' + (shownTabs.length === site.tabs.length ? site.tabs.length : shownTabs.length + "/" + site.tabs.length) + '</span></header>' +
     '<div class="site-tabs">' + shownTabs.map((tab) => tabMarkup(tab, duplicateIds)).join("") + '</div></article>';
 }
 
@@ -168,7 +168,7 @@ function render() {
   const sites = groupSites(tabs);
   const duplicates = new Set(findDuplicateTabIds(tabs, location.href));
   state.selected = new Set([...state.selected].filter((id) => duplicates.has(id)));
-  $("hero-summary").innerHTML = '共 <strong>' + tabs.length + '</strong> 个选项卡，来自 <strong>' + sites.length + '</strong> 个网站' + (state.windows.length > 1 ? '、<strong>' + state.windows.length + '</strong> 个窗口' : "") + '。';
+  $("hero-summary").innerHTML = '共 <strong>' + tabs.length + '</strong> 个标签页，来自 <strong>' + sites.length + '</strong> 个网站' + (state.windows.length > 1 ? '、<strong>' + state.windows.length + '</strong> 个窗口' : "") + '。';
   $("sync-label").textContent = state.error ? "同步中断" : demoMode ? "预览模式" : "已实时同步";
   $("sync-status").classList.toggle("is-demo", demoMode);
   $("sync-status").classList.toggle("is-error", Boolean(state.error));
@@ -195,7 +195,7 @@ function render() {
   $("results-summary").textContent = state.query.trim() ? "找到 " + results.reduce((n, item) => n + item.shown.length, 0) + " 个页面 · " + results.length + " 个网站" : "按网站自动汇总 · 点击页面即可切换";
   elements.sites.innerHTML = results.map(({ site, shown }) => siteMarkup(site, shown, duplicates)).join("");
   if (state.error) {
-    elements.sites.innerHTML = emptyMarkup("暂时无法同步选项卡", state.error, '<button class="secondary-button" data-action="retry">重新同步</button>') + elements.sites.innerHTML;
+    elements.sites.innerHTML = emptyMarkup("暂时无法同步标签页", state.error, '<button class="secondary-button" data-action="retry">重新同步</button>') + elements.sites.innerHTML;
   } else if (!results.length) {
     elements.sites.innerHTML = state.query.trim()
       ? emptyMarkup("没有找到相关页面", "试试网站名称、网页标题或网址。", '<button class="secondary-button" data-action="clear-search">清除搜索</button>')
@@ -246,7 +246,7 @@ function closeDialog() {
 function showHelp() {
   openDialog({
     title: "把已打开的页面，汇总到这里",
-    description: "在 Chrome 中点击 Orbit 图标，即可查看所有窗口的选项卡。每个网站的页面都会直接展开。",
+    description: "在 Chrome 中点击 Orbit 图标，即可查看所有窗口的标签页。每个网站的页面都会直接展开。",
     content: '<ol><li>在 Chrome 地址栏打开 <strong>chrome://extensions</strong>。</li><li>开启“开发者模式”，点击“加载已解压的扩展程序”，选择解压后包含 <strong>manifest.json</strong> 的扩展文件夹；从源码打包时选择 <strong>dist/Orbit</strong>。</li><li>已安装过 Orbit？点击扩展卡片上的刷新按钮，再打开 Orbit。</li></ol><p>快捷打开：Mac 使用 ⌘ ⇧ 0，Windows 使用 Ctrl Shift 0。</p>',
     confirmLabel: "知道了"
   });
@@ -302,7 +302,7 @@ function confirmCloseDuplicates() {
         // Re-read before removal: a selected tab may have navigated or become active.
         const sequence = ++readSequence;
         const fresh = await readWindows();
-        if (sequence !== readSequence) { toast("选项卡正在变化，请重新确认。"); return true; }
+        if (sequence !== readSequence) { toast("标签页正在变化，请重新确认。"); return true; }
         state.windows = fresh;
         const current = tabRecords();
         const duplicates = new Set(findDuplicateTabIds(current, location.href));

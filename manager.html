@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#f7f8fa" />
-    <title>Orbit · 选项卡总览</title>
+    <title>Orbit · 标签页总览</title>
     <link rel="icon" href="assets/orbit-icon.png" />
     <script src="theme.js"></script>
     <link rel="stylesheet" href="tailwind.css" />
@@ -37,33 +37,33 @@
         <section class="greeting-section">
           <p id="today-date" class="eyebrow"></p>
           <h1 id="time-greeting">你好，<span>所有页面都在这里。</span></h1>
-          <p id="hero-summary" class="hero-summary" aria-live="polite">正在整理已打开的选项卡…</p>
+          <p id="hero-summary" class="hero-summary" aria-live="polite">正在整理已打开的标签页…</p>
         </section>
         <aside id="demo-notice" class="demo-notice" hidden>
           <span>当前为预览示例。加载 Chrome 扩展后，这里会显示你真实打开的页面。</span>
           <button class="text-button" data-action="help">如何使用 <span aria-hidden="true">↗</span></button>
         </aside>
-        <section class="workspace" aria-label="网站与选项卡">
+        <section class="workspace" aria-label="网站与标签页">
           <div class="toolbar">
+            <div class="toolbar-controls">
+              <div class="view-filters" aria-label="筛选标签页">
+                <button id="all-filter" class="filter-button is-active" data-action="show-all" aria-pressed="true">全部网站 <span id="site-count">0</span></button>
+                <button id="duplicate-filter" class="filter-button" data-action="show-duplicates" aria-pressed="false">重复标签页 <span id="duplicate-count">0</span></button>
+              </div>
+              <label class="sort-field"><span class="sr-only">网站排序</span><select id="site-sort" aria-label="网站排序"><option value="count">按标签页数量</option><option value="recent">按最近访问</option><option value="name">按网站名称</option></select></label>
+            </div>
             <label class="search-field" for="global-search">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
               <input id="global-search" type="search" autocomplete="off" placeholder="搜索网站或页面…" aria-label="搜索网站或页面" />
               <kbd id="search-shortcut">⌘ K</kbd>
             </label>
-            <div class="toolbar-controls">
-              <div class="view-filters" aria-label="筛选选项卡">
-                <button id="all-filter" class="filter-button is-active" data-action="show-all" aria-pressed="true">全部网站 <span id="site-count">0</span></button>
-                <button id="duplicate-filter" class="filter-button" data-action="show-duplicates" aria-pressed="false">重复选项卡 <span id="duplicate-count">0</span></button>
-              </div>
-              <label class="sort-field"><span class="sr-only">网站排序</span><select id="site-sort" aria-label="网站排序"><option value="count">按选项卡数量</option><option value="recent">按最近访问</option><option value="name">按网站名称</option></select></label>
-            </div>
           </div>
           <div id="selection-bar" class="selection-bar" hidden aria-live="polite">
             <div><strong id="selection-summary">选择要关闭的重复项</strong><span class="selection-hint">每组保留一个页面</span></div>
             <div class="selection-actions"><button id="select-all" class="text-button" data-action="select-all">全选重复项</button><button id="close-selected" class="danger-button" data-action="close-selected" disabled>关闭选中项</button></div>
           </div>
           <div class="results-meta"><h2 id="results-heading">已打开的网站</h2><span id="results-summary">按网站自动汇总 · 点击页面即可切换</span></div>
-          <div id="sites-list" class="site-grid" aria-live="polite"><div class="loading-state">正在读取选项卡…</div></div>
+          <div id="sites-list" class="site-grid" aria-live="polite"><div class="loading-state">正在读取标签页…</div></div>
         </section>
       </main>
       <footer class="app-footer"><span>给打开的页面，一个清楚的位置。</span><span>Orbit <span class="footer-dot">·</span> 本地整理</span></footer>

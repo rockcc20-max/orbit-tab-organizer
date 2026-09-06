@@ -33,7 +33,7 @@ for (const name of entryPoints) {
   if (!name || !files.has(name)) throw new Error(`入口文件不在发布白名单中：${name}`);
 }
 for (const name of ["background.js", "manager.bundle.js", "theme.js"]) new Script(files.get(name).toString(), { filename: name });
-files.set("INSTALL.txt", Buffer.from(`Orbit ${manifest.version} · Chrome 选项卡总览\n\n1. 解压 ZIP 后保留整个文件夹（不要双击 manager.html 安装）。\n2. 在 Chrome 地址栏打开 chrome://extensions，开启右上角“开发者模式”。\n3. 点击“加载已解压的扩展程序”，选择包含 manifest.json 的这个文件夹。\n4. 点击浏览器工具栏的拼图图标，将 Orbit 固定；之后点击 Orbit 即可汇总真实选项卡。\n\n快捷键：Mac 为 Command + Shift + 0；Windows 为 Ctrl + Shift + 0。\n更新：替换同一扩展目录的文件后，在 chrome://extensions 中点击 Orbit 的刷新按钮。\n请勿删除或移动已加载的文件夹。无需发布、服务器或账号。\n`));
+files.set("INSTALL.txt", Buffer.from(`Orbit ${manifest.version} · Chrome 标签页总览\n\n1. 解压 ZIP 后保留整个文件夹（不要双击 manager.html 安装）。\n2. 在 Chrome 地址栏打开 chrome://extensions，开启右上角“开发者模式”。\n3. 点击“加载已解压的扩展程序”，选择包含 manifest.json 的这个文件夹。\n4. 点击浏览器工具栏的拼图图标，将 Orbit 固定；之后点击 Orbit 即可汇总真实标签页。\n\n快捷键：Mac 为 Command + Shift + 0；Windows 为 Ctrl + Shift + 0。\n更新：替换同一扩展目录的文件后，在 chrome://extensions 中点击 Orbit 的刷新按钮。\n请勿删除或移动已加载的文件夹。无需发布、服务器或账号。\n`));
 
 const dist = path.join(root, "dist");
 const unpacked = path.join(dist, "Orbit");

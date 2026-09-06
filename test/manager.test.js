@@ -122,7 +122,7 @@ test("extension startup excludes Orbit itself but preserves another extension's 
     tab(3, "https://m.youtube.com/watch?v=two"),
     tab(4, "chrome-extension://different-extension/manager.html")
   ])]);
-  assert.match(app.element("hero-summary").innerHTML, /<strong>3<\/strong> 个选项卡/);
+  assert.match(app.element("hero-summary").innerHTML, /<strong>3<\/strong> 个标签页/);
   assert.equal(app.element("site-count").textContent, 2);
   assert.equal((app.element("sites-list").innerHTML.match(/<h3>YouTube<\/h3>/g) || []).length, 1);
   assert.match(app.element("sites-list").innerHTML, /different-extension/);
