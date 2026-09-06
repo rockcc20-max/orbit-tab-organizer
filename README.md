@@ -2,6 +2,14 @@
 
 一个本地运行的 Chrome 扩展，把多个浏览器窗口里打开的选项卡，按网站汇总在同一页。无需账号、服务器或 AI 服务。
 
+## 下载插件
+
+**[下载 Orbit v0.5.0 安装包（ZIP）](https://github.com/rockcc20-max/orbit-tab-organizer/releases/download/v0.5.0/orbit-0.5.0.zip)** · [查看发布版本](https://github.com/rockcc20-max/orbit-tab-organizer/releases)
+
+安装包已编译好，无需安装 Node.js、npm 或自行构建。下载后解压，再按下方的 [Chrome 安装步骤](#安装到-chrome) 加载即可。
+
+请下载名为 `orbit-0.5.0.zip` 的附件，而不是 GitHub 自动提供的 `Source code (zip)` / `Source code (tar.gz)` 源码包。ZIP 版扩展需要通过 Chrome 的“开发者模式”加载，不能双击 ZIP 自动安装。
+
 ## 功能
 
 - 网站 Logo、名称和选项卡数量一目了然；每个网站下直接列出全部页面，无需展开。
@@ -15,12 +23,14 @@
 
 ## 安装到 Chrome
 
-Orbit 可作为本地扩展使用，无需先发布到 Chrome 应用商店。
+使用上面的已编译安装包即可安装，无需编写代码。
 
-1. 将构建好的 `orbit-0.5.0.zip` 解压到一个准备长期保留的文件夹。如果下载的是项目源码，请先按下方说明构建。
+1. [下载安装包](https://github.com/rockcc20-max/orbit-tab-organizer/releases/download/v0.5.0/orbit-0.5.0.zip)，解压到一个准备长期保留的文件夹，不要只打开 ZIP 或双击 `manager.html`。
 2. 在 Chrome 地址栏输入 `chrome://extensions`，打开右上角“开发者模式”。
 3. 点击“加载已解压的扩展程序”（有些版本显示“加载未打包的扩展程序”），选择解压后**直接包含 `manifest.json` 的文件夹**。从源码构建时，选择 `dist/Orbit/`。
 4. 点击工具栏的拼图图标，将 Orbit 固定；之后点击 Orbit 图标即可打开总览。
+
+如果下载的是项目源码，请先按下方说明构建。上述加载方式可参考 [Chrome 官方安装指引](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked)。
 
 快捷键：macOS 为 `Command + Shift + 0`，Windows / Linux 为 `Ctrl + Shift + 0`。若快捷键冲突，可在 `chrome://extensions/shortcuts` 调整。
 
