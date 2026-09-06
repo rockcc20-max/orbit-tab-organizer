@@ -1,0 +1,16 @@
+node_modules/
+.DS_Store
+dist/
+*.zip
+orbit-preview.png
+orbit-sites-preview.png
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.codex/
+.agents/
+.github-publish/
+coverage/
+*.log

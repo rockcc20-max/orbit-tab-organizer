@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f7f8fa" />
+    <title>Orbit · 选项卡总览</title>
+    <link rel="icon" href="assets/orbit-icon.png" />
+    <link rel="stylesheet" href="tailwind.css" />
+  </head>
+  <body>
+    <div class="app-shell mx-auto max-w-[1480px] px-5 sm:px-9 lg:px-12">
+      <header class="app-header flex items-center justify-between gap-4">
+        <a class="brand" href="manager.html" aria-label="Orbit 首页">
+          <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="8" stroke="currentColor" stroke-width="2.5"/><ellipse cx="16" cy="16" rx="15" ry="6" transform="rotate(-35 16 16)" stroke="currentColor" stroke-width="1.5"/><circle cx="27" cy="8" r="3" fill="#f7f8fa"/><circle cx="27" cy="8" r="2.2" fill="currentColor"/></svg>
+          <span>orbit<span class="brand-period">.</span></span>
+        </a>
+        <div class="flex items-center gap-3">
+          <span id="sync-status" class="sync-status" role="status"><span class="status-dot"></span><span id="sync-label">正在同步</span></span>
+          <button id="help-button" class="icon-button" data-action="help" aria-label="使用说明" title="使用说明">?</button>
+        </div>
+      </header>
+      <main>
+        <section class="greeting-section">
+          <p id="today-date" class="eyebrow"></p>
+          <h1 id="time-greeting">你好，<span>所有页面都在这里。</span></h1>
+          <p id="hero-summary" class="hero-summary" aria-live="polite">正在整理已打开的选项卡…</p>
+        </section>
+        <aside id="demo-notice" class="demo-notice" hidden>
+          <span>当前为预览示例。加载 Chrome 扩展后，这里会显示你真实打开的页面。</span>
+          <button class="text-button" data-action="help">如何使用 <span aria-hidden="true">↗</span></button>
+        </aside>
+        <section class="workspace" aria-label="网站与选项卡">
+          <div class="toolbar">
+            <label class="search-field" for="global-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+              <input id="global-search" type="search" autocomplete="off" placeholder="搜索网站或页面…" aria-label="搜索网站或页面" />
+              <kbd id="search-shortcut">⌘ K</kbd>
+            </label>
+            <div class="toolbar-controls">
+              <div class="view-filters" aria-label="筛选选项卡">
+                <button id="all-filter" class="filter-button is-active" data-action="show-all" aria-pressed="true">全部网站 <span id="site-count">0</span></button>
+                <button id="duplicate-filter" class="filter-button" data-action="show-duplicates" aria-pressed="false">重复选项卡 <span id="duplicate-count">0</span></button>
+              </div>
+              <label class="sort-field"><span class="sr-only">网站排序</span><select id="site-sort" aria-label="网站排序"><option value="count">按选项卡数量</option><option value="recent">按最近访问</option><option value="name">按网站名称</option></select></label>
+            </div>
+          </div>
+          <div id="selection-bar" class="selection-bar" hidden aria-live="polite">
+            <div><strong id="selection-summary">选择要关闭的重复项</strong><span class="selection-hint">每组保留一个页面</span></div>
+            <div class="selection-actions"><button id="select-all" class="text-button" data-action="select-all">全选重复项</button><button id="close-selected" class="danger-button" data-action="close-selected" disabled>关闭选中项</button></div>
+          </div>
+          <div class="results-meta"><h2 id="results-heading">已打开的网站</h2><span id="results-summary">按网站自动汇总 · 点击页面即可切换</span></div>
+          <div id="sites-list" class="site-grid" aria-live="polite"><div class="loading-state">正在读取选项卡…</div></div>
+        </section>
+      </main>
+      <footer class="app-footer"><span>给打开的页面，一个清楚的位置。</span><span>Orbit <span class="footer-dot">·</span> 本地整理</span></footer>
+    </div>
+    <dialog id="action-dialog" class="action-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description">
+      <div class="dialog-header"><span class="eyebrow">ORBIT</span><button class="icon-button" data-action="close-dialog" aria-label="关闭对话框">×</button></div>
+      <h2 id="dialog-title"></h2><p id="dialog-description"></p><div id="dialog-content"></div>
+      <div class="dialog-actions"><button id="dialog-cancel" class="secondary-button" data-action="close-dialog">取消</button><button id="dialog-confirm" class="primary-button">确认</button></div>
+    </dialog>
+    <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
+    <script src="manager.bundle.js" defer></script>
+  </body>
+</html>
