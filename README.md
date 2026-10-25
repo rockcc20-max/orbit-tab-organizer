@@ -1,10 +1,14 @@
-# Orbit · Chorme 浏览器标签页聚合工具
+# Dotdash（原 Orbit）· Chrome 浏览器标签页聚合工具
 
 一个本地运行的 Chrome 扩展，把多个浏览器窗口里打开的标签页，按网站汇总在同一页。无需账号、服务器或 AI 服务。
 
+Dotdash 是 Orbit 的新产品名称，0.8.0 品牌更新将使用新的名称与 Logo。更新沿用原 Chrome Web Store 条目及扩展 ID `cackodfbaneimnkhcoddbphfcbckjgdj`，权限与数据处理方式不变；商店上传、审核及发布状态以实际商店结果为准。
+
+**版本说明：本 GitHub 仓库的代码和下方安装包目前仍为 Orbit v0.7.1。** 本次仅同步品牌说明及中英文隐私政策，尚未同步 Dotdash v0.8.0 源码或创建新版 GitHub Release。因此，下方构建命令、安装目录与现有截图仍对应 Orbit v0.7.1，不是新版 Dotdash 的下载或上架声明。现有用户无需为品牌变更安装另一个商店扩展，等待原条目的正式更新即可。
+
 ## 下载插件
 
-**[下载 Orbit v0.7.1 安装包（ZIP）](https://github.com/rockcc20-max/orbit-tab-organizer/releases/download/v0.7.1/orbit-0.7.1.zip)** · [查看发布版本](https://github.com/rockcc20-max/orbit-tab-organizer/releases)
+**[下载旧品牌 Orbit v0.7.1 安装包（ZIP）](https://github.com/rockcc20-max/orbit-tab-organizer/releases/download/v0.7.1/orbit-0.7.1.zip)** · [查看已发布版本](https://github.com/rockcc20-max/orbit-tab-organizer/releases)
 
 安装包已编译好，无需安装 Node.js、npm 或自行构建。下载后解压，再按下方的 [Chrome 安装步骤](#安装到-chrome) 加载即可。
 
@@ -23,7 +27,7 @@
 - 查看重复标签页，勾选后确认批量关闭；也可单独关闭任意页面。
 - 监听标签页与窗口变化，自动更新；样式和脚本随扩展打包，不依赖 CDN。
 
-当前版本：`0.7.1`，包含四语言界面、手动同步、易读的网站名称和太阳／月亮一键切换。使用 Manifest V3 和本地编译的 Tailwind CSS。
+本 GitHub 仓库当前代码版本：Orbit `0.7.1`，包含四语言界面、手动同步、易读的网站名称和太阳／月亮一键切换。使用 Manifest V3 和本地编译的 Tailwind CSS。Dotdash `0.8.0` 品牌更新源码尚未同步到此仓库。
 
 ## 安装到 Chrome
 
@@ -42,7 +46,7 @@
 
 ## 产品截图
 
-以下截图使用内置示例数据，不包含真实用户的浏览记录。安装后会显示你自己打开的标签页。
+以下为 Orbit v0.7.1 历史截图，使用内置示例数据，不包含真实用户的浏览记录；它们不代表 Dotdash v0.8.0 的新名称与新 Logo。安装后会显示你自己打开的标签页。
 
 ### 按网站汇总
 
